@@ -2,9 +2,41 @@
 - hosts: masters
   become: yes
   gather_facts: no
-  roles:
-    - kubernetes-setup
+
   tasks:
+    - name: Disable Swap
+      command:
+        cmd: swapoff -a
+        warn: no
+
+    - name: Add Kubernetes APT Key
+      apt_key:
+        url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
+        state: present
+
+    - name: Add Kubernetes APT Repository
+      apt_repository:
+        repo: deb https://apt.kubernetes.io/ kubernetes-xenial main
+        state: present
+
+    - name: Install Kubernetes Tools
+      apt:
+        name:
+          - kubelet=1.28.2-00
+          - kubeadm=1.28.2-00
+          - kubectl=1.28.2-00
+        state: present
+        force_apt_get: yes
+        allow_downgrade: yes
+
+    - name: Copy kubeadm-config.yaml to /etc/kubernetes/
+      copy:
+        src: files/kubeadm-config.yaml
+        dest: /etc/kubernetes/kubeadm-config.yaml
+
+    - name: Initialize the Kubernetes Cluster
+      command: kubeadm init --config /etc/kubernetes/kubeadm-config.yaml
+
     - name: Get join token
       shell: kubeadm token list | awk 'NR>1{print $1}'
       register: join_token
@@ -23,9 +55,10 @@
 
 - hosts: workers
   become: yes
+
   tasks:
     - name: Join cluster
       command: >
-        kubeadm join {{ hostvars['master'].ansible_host }}:6443
-        --token {{ hostvars['master'].join_token }}
-        --discovery-token-ca-cert-hash sha256:{{ hostvars['master'].discovery_token }}
+        kubeadm join {{ hostvars['masters'].ansible_host }}:6443
+        --token {{ hostvars['masters'].join_token }}
+        --discovery-token-ca-cert-hash sha256:{{ hostvars['masters'].discovery_token }}

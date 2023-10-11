@@ -1,19 +1,4 @@
 ---
-- name: Install Docker
-  apt:
-    name: docker.io
-    state: present
-
-- name: Install Kubernetes Tools
-  apt:
-    name:
-      - kubelet=1.27.0-00
-      - kubeadm=1.27.0-00
-      - kubectl=1.27.0-00
-    state: present
-
-  ignore_errors: yes
-
 - name: Add Kubernetes apt-key
   apt_key:
     url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
@@ -23,15 +8,21 @@
   apt_repository:
     repo: deb https://apt.kubernetes.io/ kubernetes-xenial main
     state: present
-  register: apt_repo_added
 
-- name: Ensure kubelet and kubeadm are installed
+- name: Install Docker
+  apt:
+    name: docker.io
+    state: present
+
+- name: Install Kubernetes Tools
   apt:
     name:
-      - kubelet
-      - kubeadm
+      - kubelet=1.28.2-00
+      - kubeadm=1.28.2-00
+      - kubectl=1.28.2-00
     state: present
-  when: apt_repo_added.changed
+    force_apt_get: yes
+    allow_downgrade: yes
 
 - name: Copy kubeadm-config.yaml to /etc/kubernetes/
   copy:
