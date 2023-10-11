@@ -2,7 +2,7 @@
 - hosts: masters
   become: yes
   roles:
-    - /home/ubuntu/k8s-ansible-setup/roles/kubernetes-setup
+    - kubernetes-setup
   tasks:
     - name: Get join token
       shell: kubeadm token list | awk 'NR>1{print $1}'
