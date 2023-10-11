@@ -32,18 +32,12 @@
     state: present
   when: apt_repo_added.changed
 
-- name: Initialize the Kubernetes Cluster
-  command: kubeadm init --config /etc/kubernetes/kubeadm-config.yaml
-  args:
-    creates: /etc/kubernetes/admin.conf
-
-- name: Copy the kubernetes admin.conf to user's kube config
-  command: "{{ item }}"
-  with_items:
-    - mkdir -p $HOME/.kube
-    - cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
-    - chown $(id -u):$(id -g) $HOME/.kube/config
-
+- name: Copy kubeadm-config.yaml to /etc/kubernetes/
+  copy:
+    src: files/kubeadm-config.yaml
+    dest: /etc/kubernetes/kubeadm-config.yaml
+    mode: '0644'
+    
 - name: Initialize the Kubernetes Cluster
   command: kubeadm init --config /etc/kubernetes/kubeadm-config.yaml
   args:
